@@ -3,7 +3,7 @@ import { ParsedData } from './dataParser';
 
 Chart.register(...registerables);
 
-export type ChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'doughnut';
+export type ChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'doughnut' | 'area' | 'polarArea' | 'radar' | 'bubble';
 
 export interface ChartSuggestion {
   type: ChartType;
@@ -15,25 +15,63 @@ export interface ChartSuggestion {
 }
 
 export const suggestCharts = (parsedData: ParsedData): ChartSuggestion[] => {
-  const { headers, types } = parsedData;
+  const { headers, types, rows } = parsedData;
   const suggestions: ChartSuggestion[] = [];
   
   const numericColumns = headers.filter(h => types[h] === 'number');
   const categoricalColumns = headers.filter(h => types[h] === 'string');
   const dateColumns = headers.filter(h => types[h] === 'date');
   
-  // Time series
+  // Detect contact-related data
+  const contactKeywords = ['name', 'email', 'phone', 'contact', 'message', 'subject'];
+  const hasContactData = headers.some(h => 
+    contactKeywords.some(k => h.toLowerCase().includes(k))
+  );
+  
+  // For contact data, prioritize table view and simpler visualizations
+  if (hasContactData) {
+    if (categoricalColumns.length > 0) {
+      suggestions.push({
+        type: 'doughnut',
+        title: `${categoricalColumns[0]} Distribution`,
+        reason: 'Contact categories overview',
+        data: categoricalColumns[0]
+      });
+    }
+    
+    if (dateColumns.length > 0) {
+      suggestions.push({
+        type: 'area',
+        title: `Contact Timeline`,
+        reason: 'Contacts over time',
+        xAxis: dateColumns[0],
+        yAxis: 'count'
+      });
+    }
+    
+    return suggestions;
+  }
+  
+  // Time series with area chart
   if (dateColumns.length > 0 && numericColumns.length > 0) {
+    suggestions.push({
+      type: 'area',
+      title: `${numericColumns[0]} Trend over ${dateColumns[0]}`,
+      reason: 'Time series trend analysis',
+      xAxis: dateColumns[0],
+      yAxis: numericColumns[0]
+    });
+    
     suggestions.push({
       type: 'line',
       title: `${numericColumns[0]} over ${dateColumns[0]}`,
-      reason: 'Time series data detected',
+      reason: 'Detailed time series',
       xAxis: dateColumns[0],
       yAxis: numericColumns[0]
     });
   }
   
-  // Categorical comparison
+  // Categorical comparison with multiple options
   if (categoricalColumns.length > 0 && numericColumns.length > 0) {
     suggestions.push({
       type: 'bar',
@@ -42,30 +80,58 @@ export const suggestCharts = (parsedData: ParsedData): ChartSuggestion[] => {
       xAxis: categoricalColumns[0],
       yAxis: numericColumns[0]
     });
+    
+    // Add polar area for category distributions
+    if (rows.length <= 20) {
+      suggestions.push({
+        type: 'polarArea',
+        title: `${numericColumns[0]} Distribution`,
+        reason: 'Radial category view',
+        data: categoricalColumns[0]
+      });
+    }
   }
   
-  // Distribution
-  if (categoricalColumns.length > 0 && numericColumns.length > 0) {
+  // Distribution charts
+  if (categoricalColumns.length > 0) {
     suggestions.push({
-      type: 'pie',
-      title: `Distribution of ${categoricalColumns[0]}`,
-      reason: 'Show proportions',
+      type: 'doughnut',
+      title: `${categoricalColumns[0]} Breakdown`,
+      reason: 'Category proportions',
       data: categoricalColumns[0]
     });
   }
   
-  // Correlation
+  // Multi-dimensional analysis
+  if (numericColumns.length >= 3) {
+    suggestions.push({
+      type: 'radar',
+      title: `Multi-factor Analysis`,
+      reason: 'Compare multiple metrics',
+      data: categoricalColumns[0] || 'categories'
+    });
+  }
+  
+  // Correlation analysis
   if (numericColumns.length >= 2) {
     suggestions.push({
       type: 'scatter',
       title: `${numericColumns[0]} vs ${numericColumns[1]}`,
-      reason: 'Numeric correlation',
+      reason: 'Correlation analysis',
+      xAxis: numericColumns[0],
+      yAxis: numericColumns[1]
+    });
+    
+    suggestions.push({
+      type: 'bubble',
+      title: `${numericColumns[0]} vs ${numericColumns[1]} (Bubble)`,
+      reason: 'Multi-dimensional comparison',
       xAxis: numericColumns[0],
       yAxis: numericColumns[1]
     });
   }
   
-  return suggestions.slice(0, 4);
+  return suggestions.slice(0, 8);
 };
 
 export const createChart = (
@@ -77,7 +143,7 @@ export const createChart = (
   
   let config: ChartConfiguration;
   
-  if (suggestion.type === 'pie' || suggestion.type === 'doughnut') {
+  if (suggestion.type === 'pie' || suggestion.type === 'doughnut' || suggestion.type === 'polarArea') {
     const dataColumn = suggestion.data!;
     const counts: Record<string, number> = {};
     
@@ -131,26 +197,84 @@ export const createChart = (
         }
       }
     };
+  } else if (suggestion.type === 'radar') {
+    const numericCols = Object.keys(parsedData.types).filter(h => parsedData.types[h] === 'number');
+    const labels = numericCols.slice(0, 6);
+    const dataPoints = labels.map(col => {
+      const values = rows.map(row => Number(row[col]) || 0);
+      return values.reduce((a, b) => a + b, 0) / values.length;
+    });
+    
+    config = {
+      type: 'radar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Average Values',
+          data: dataPoints,
+          backgroundColor: 'rgba(147, 51, 234, 0.3)',
+          borderColor: 'rgba(147, 51, 234, 1)',
+          borderWidth: 2,
+          pointBackgroundColor: 'rgba(16, 185, 233, 1)',
+          pointBorderColor: 'rgba(255, 255, 255, 0.8)',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: {
+              color: 'rgba(255, 255, 255, 0.8)'
+            }
+          },
+          title: {
+            display: true,
+            text: suggestion.title,
+            color: 'rgba(255, 255, 255, 0.9)',
+            font: { size: 14, weight: 'bold' }
+          }
+        },
+        scales: {
+          r: {
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              backdropColor: 'transparent'
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            },
+            pointLabels: {
+              color: 'rgba(255, 255, 255, 0.8)'
+            }
+          }
+        }
+      }
+    };
   } else {
     const xData = rows.map(row => row[suggestion.xAxis!]);
     const yData = rows.map(row => Number(row[suggestion.yAxis!]) || 0);
     
+    const baseConfig = {
+      label: suggestion.yAxis,
+      data: yData.slice(0, 50),
+      backgroundColor: suggestion.type === 'area' ? 'rgba(147, 51, 234, 0.3)' : 'rgba(147, 51, 234, 0.6)',
+      borderColor: 'rgba(147, 51, 234, 1)',
+      borderWidth: 2,
+      tension: 0.4,
+      pointBackgroundColor: 'rgba(16, 185, 233, 1)',
+      pointBorderColor: 'rgba(255, 255, 255, 0.8)',
+      pointRadius: suggestion.type === 'scatter' || suggestion.type === 'bubble' ? 5 : 3,
+      pointHoverRadius: 7,
+      fill: suggestion.type === 'area'
+    };
+    
     config = {
-      type: suggestion.type,
+      type: suggestion.type === 'area' ? 'line' : suggestion.type,
       data: {
         labels: xData.slice(0, 50),
-        datasets: [{
-          label: suggestion.yAxis,
-          data: yData.slice(0, 50),
-          backgroundColor: 'rgba(147, 51, 234, 0.6)',
-          borderColor: 'rgba(147, 51, 234, 1)',
-          borderWidth: 2,
-          tension: 0.4,
-          pointBackgroundColor: 'rgba(16, 185, 233, 1)',
-          pointBorderColor: 'rgba(255, 255, 255, 0.8)',
-          pointRadius: suggestion.type === 'scatter' ? 5 : 3,
-          pointHoverRadius: 7
-        }]
+        datasets: [baseConfig]
       },
       options: {
         responsive: true,

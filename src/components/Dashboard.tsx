@@ -3,7 +3,8 @@ import { ParsedData } from '@/utils/dataParser';
 import { ChartSuggestion, suggestCharts } from '@/utils/chartGenerator';
 import { ChartPanel } from './ChartPanel';
 import { DataTable } from './DataTable';
-import { BarChart3, Table2, Save, FolderOpen } from 'lucide-react';
+import { StatisticsCards } from './StatisticsCards';
+import { BarChart3, Table2, Save, FolderOpen, Download, Filter, Settings2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DashboardProps {
@@ -38,7 +39,7 @@ export const Dashboard = ({ data }: DashboardProps) => {
       timestamp: new Date().toISOString()
     };
     localStorage.setItem('dashboard-state', JSON.stringify(state));
-    toast.success('Dashboard saved');
+    toast.success('Dashboard saved successfully');
   };
 
   const loadDashboard = () => {
@@ -47,7 +48,7 @@ export const Dashboard = ({ data }: DashboardProps) => {
       try {
         const state = JSON.parse(saved);
         setActiveCharts(state.activeCharts);
-        toast.success('Dashboard loaded');
+        toast.success('Dashboard loaded successfully');
       } catch {
         toast.error('Failed to load dashboard');
       }
@@ -56,13 +57,36 @@ export const Dashboard = ({ data }: DashboardProps) => {
     }
   };
 
+  const exportData = () => {
+    const csv = [
+      data.headers.join(','),
+      ...data.rows.map(row => data.headers.map(h => row[h]).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${data.fileName}_export.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Data exported as CSV');
+  };
+
+  const refreshCharts = () => {
+    const chartSuggestions = suggestCharts(data);
+    setSuggestions(chartSuggestions);
+    setActiveCharts(chartSuggestions.slice(0, 2));
+    toast.success('Charts refreshed');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Controls */}
       <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
               Analytics Dashboard
             </h2>
             <p className="text-muted-foreground mt-1">
@@ -70,7 +94,15 @@ export const Dashboard = ({ data }: DashboardProps) => {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={refreshCharts} className="btn-accent flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+            <button onClick={exportData} className="btn-primary flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
             <button onClick={saveDashboard} className="btn-primary flex items-center gap-2">
               <Save className="w-4 h-4" />
               Save
@@ -93,7 +125,7 @@ export const Dashboard = ({ data }: DashboardProps) => {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Charts
+            Visualizations
           </button>
           <button
             onClick={() => setActiveTab('data')}
@@ -104,21 +136,27 @@ export const Dashboard = ({ data }: DashboardProps) => {
             }`}
           >
             <Table2 className="w-4 h-4" />
-            Data
+            Data Table
           </button>
         </div>
       </div>
 
+      {/* Statistics Cards */}
+      <StatisticsCards data={data} />
+
       {/* Chart Suggestions */}
       {activeTab === 'charts' && suggestions.length > 0 && (
         <div className="glass-card p-6">
-          <h3 className="font-semibold mb-4">Suggested Charts</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg">Available Chart Types</h3>
+            <span className="text-sm text-muted-foreground">{suggestions.length} suggestions</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => addChart(suggestion)}
-                className="px-4 py-2 glass-panel rounded-lg hover:bg-secondary transition-all text-sm"
+                className="px-4 py-2 glass-panel rounded-lg hover:bg-secondary hover:scale-105 transition-all text-sm font-medium"
               >
                 + {suggestion.title}
               </button>
@@ -140,9 +178,10 @@ export const Dashboard = ({ data }: DashboardProps) => {
           ))}
           {activeCharts.length === 0 && (
             <div className="col-span-full glass-card p-12 text-center">
-              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Charts Yet</h3>
               <p className="text-muted-foreground">
-                No charts added yet. Click on a suggested chart above to get started.
+                Click on any suggested chart above to visualize your data
               </p>
             </div>
           )}
