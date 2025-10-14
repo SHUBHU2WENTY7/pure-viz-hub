@@ -28,6 +28,49 @@ export const suggestCharts = (parsedData: ParsedData): ChartSuggestion[] => {
     contactKeywords.some(k => h.toLowerCase().includes(k))
   );
   
+  // Detect product/competitor data
+  const productKeywords = ['product', 'item', 'competitor', 'brand', 'category', 'sku'];
+  const hasProductData = headers.some(h => 
+    productKeywords.some(k => h.toLowerCase().includes(k))
+  );
+  
+  // Find quantity/count/sales columns for product analysis
+  const salesKeywords = ['quantity', 'count', 'sales', 'revenue', 'price', 'demand', 'asked'];
+  const salesColumn = headers.find(h => 
+    salesKeywords.some(k => h.toLowerCase().includes(k))
+  );
+  
+  // Product/Competitor Analysis
+  if (hasProductData && salesColumn) {
+    const productCol = headers.find(h => 
+      productKeywords.some(k => h.toLowerCase().includes(k))
+    );
+    
+    if (productCol) {
+      suggestions.push({
+        type: 'bar',
+        title: `Most Demanded Products`,
+        reason: 'Product demand comparison',
+        xAxis: productCol,
+        yAxis: salesColumn
+      });
+      
+      suggestions.push({
+        type: 'doughnut',
+        title: `Product Market Share`,
+        reason: 'Market distribution',
+        data: productCol
+      });
+      
+      suggestions.push({
+        type: 'polarArea',
+        title: `Product Performance Analysis`,
+        reason: 'Radial product comparison',
+        data: productCol
+      });
+    }
+  }
+  
   // For contact data, prioritize table view and simpler visualizations
   if (hasContactData) {
     if (categoricalColumns.length > 0) {

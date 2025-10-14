@@ -26,6 +26,11 @@ const Index = () => {
     }
   };
 
+  const handleReset = () => {
+    setParsedData(null);
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -55,7 +60,7 @@ const Index = () => {
             <p className="text-muted-foreground">Processing your data...</p>
           </div>
         ) : parsedData ? (
-          <Dashboard data={parsedData} />
+          <Dashboard data={parsedData} onReset={handleReset} />
         ) : (
           <div className="max-w-3xl mx-auto space-y-8">
             <div className="text-center space-y-4 mb-12 animate-slide-up">

@@ -12,9 +12,15 @@ export const StatisticsCards = ({ data }: StatisticsCardsProps) => {
   const totalRecords = data.rows.length;
   const totalColumns = data.headers.length;
   
-  // Calculate average of first numeric column
+  // Detect contact-related data
+  const contactKeywords = ['name', 'email', 'phone', 'contact', 'message', 'subject'];
+  const isContactData = data.headers.some(h => 
+    contactKeywords.some(k => h.toLowerCase().includes(k))
+  );
+  
+  // Calculate average of first numeric column (but not for contacts)
   let averageValue = 0;
-  if (numericColumns.length > 0) {
+  if (!isContactData && numericColumns.length > 0) {
     const values = data.rows.map(row => Number(row[numericColumns[0]]) || 0);
     averageValue = values.reduce((a, b) => a + b, 0) / values.length;
   }
@@ -42,8 +48,8 @@ export const StatisticsCards = ({ data }: StatisticsCardsProps) => {
       bgGradient: 'from-blue-500/10 to-cyan-500/10'
     },
     {
-      title: numericColumns[0] ? `Avg ${numericColumns[0]}` : 'Average Value',
-      value: averageValue.toFixed(2),
+      title: isContactData ? 'Total Contacts' : (numericColumns[0] ? `Avg ${numericColumns[0]}` : 'Average Value'),
+      value: isContactData ? totalRecords.toLocaleString() : averageValue.toFixed(2),
       icon: TrendingUp,
       gradient: 'from-cyan-500 to-emerald-500',
       bgGradient: 'from-cyan-500/10 to-emerald-500/10'
