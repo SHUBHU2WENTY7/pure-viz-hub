@@ -25,19 +25,19 @@ export const suggestCharts = (parsedData: ParsedData): ChartSuggestion[] => {
   // Detect contact-related data
   const contactKeywords = ['name', 'email', 'phone', 'contact', 'message', 'subject'];
   const hasContactData = headers.some(h => 
-    contactKeywords.some(k => h.toLowerCase().includes(k))
+    h && contactKeywords.some(k => h.toLowerCase().includes(k))
   );
   
   // Detect product/competitor data
   const productKeywords = ['product', 'item', 'competitor', 'brand', 'category', 'sku'];
   const hasProductData = headers.some(h => 
-    productKeywords.some(k => h.toLowerCase().includes(k))
+    h && productKeywords.some(k => h.toLowerCase().includes(k))
   );
   
   // Find quantity/count/sales columns for product analysis
   const salesKeywords = ['quantity', 'count', 'sales', 'revenue', 'price', 'demand', 'asked'];
   const salesColumn = headers.find(h => 
-    salesKeywords.some(k => h.toLowerCase().includes(k))
+    h && salesKeywords.some(k => h.toLowerCase().includes(k))
   );
   
   // Product/Competitor Analysis

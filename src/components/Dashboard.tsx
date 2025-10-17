@@ -4,7 +4,10 @@ import { ChartSuggestion, suggestCharts } from '@/utils/chartGenerator';
 import { ChartPanel } from './ChartPanel';
 import { DataTable } from './DataTable';
 import { StatisticsCards } from './StatisticsCards';
-import { BarChart3, Table2, Save, FolderOpen, Download, Filter, Settings2, RefreshCw } from 'lucide-react';
+import { AdvancedFilters } from './AdvancedFilters';
+import { DataInsights } from './DataInsights';
+import { ExportOptions } from './ExportOptions';
+import { BarChart3, Table2, Save, FolderOpen, Filter, Settings2, RefreshCw, Sparkles, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DashboardProps {
@@ -15,8 +18,8 @@ interface DashboardProps {
 export const Dashboard = ({ data, onReset }: DashboardProps) => {
   const [activeCharts, setActiveCharts] = useState<ChartSuggestion[]>([]);
   const [suggestions, setSuggestions] = useState<ChartSuggestion[]>([]);
-  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview'>('overview');
-  const [filterText, setFilterText] = useState('');
+  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview' | 'insights' | 'export'>('overview');
+  const [filteredData, setFilteredData] = useState<ParsedData>(data);
 
   useEffect(() => {
     const chartSuggestions = suggestCharts(data);
@@ -59,21 +62,6 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
     }
   };
 
-  const exportData = () => {
-    const csv = [
-      data.headers.join(','),
-      ...data.rows.map(row => data.headers.map(h => row[h]).join(','))
-    ].join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${data.fileName}_export.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('Data exported as CSV');
-  };
 
   const refreshCharts = () => {
     const chartSuggestions = suggestCharts(data);
@@ -87,16 +75,9 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
     toast.success('All charts cleared');
   };
 
-  const filteredData = filterText
-    ? {
-        ...data,
-        rows: data.rows.filter(row =>
-          Object.values(row).some(val =>
-            String(val).toLowerCase().includes(filterText.toLowerCase())
-          )
-        )
-      }
-    : data;
+  const handleFilter = (filteredRows: any[]) => {
+    setFilteredData({ ...data, rows: filteredRows });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -126,10 +107,6 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
             <button onClick={clearAllCharts} className="btn-accent flex items-center gap-2">
               <Filter className="w-4 h-4" />
               Clear All
-            </button>
-            <button onClick={exportData} className="btn-primary flex items-center gap-2">
-              <Download className="w-4 h-4" />
-              Export CSV
             </button>
             <button onClick={saveDashboard} className="btn-primary flex items-center gap-2">
               <Save className="w-4 h-4" />
@@ -176,6 +153,28 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
           >
             <Table2 className="w-4 h-4" />
             Data Table
+          </button>
+          <button
+            onClick={() => setActiveTab('insights')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'insights'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            AI Insights
+          </button>
+          <button
+            onClick={() => setActiveTab('export')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'export'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            Export & Share
           </button>
         </div>
       </div>
@@ -292,19 +291,7 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
         </div>
       ) : activeTab === 'charts' ? (
         <>
-          {/* Global Filter */}
-          <div className="glass-card p-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Filter all data..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-sm"
-              />
-            </div>
-          </div>
+          <AdvancedFilters data={data} onFilter={handleFilter} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {activeCharts.map((chart, index) => (
@@ -326,6 +313,55 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
             )}
           </div>
         </>
+      ) : activeTab === 'insights' ? (
+        <div className="space-y-6">
+          <DataInsights data={data} />
+          
+          {/* Additional Analytics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4">Data Distribution</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Numeric Columns</span>
+                  <span className="font-bold text-blue-500">{data.headers.filter(h => data.types[h] === 'number').length}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Text Columns</span>
+                  <span className="font-bold text-emerald-500">{data.headers.filter(h => data.types[h] === 'string').length}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Date Columns</span>
+                  <span className="font-bold text-purple-500">{data.headers.filter(h => data.types[h] === 'date').length}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Data Completeness</span>
+                  <span className="font-bold text-emerald-500">
+                    {(((data.rows.length * data.headers.length - data.rows.reduce((acc, row) => {
+                      return acc + Object.values(row).filter(v => v === null || v === '').length;
+                    }, 0)) / (data.rows.length * data.headers.length)) * 100).toFixed(1)}%
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Avg Row Size</span>
+                  <span className="font-bold text-blue-500">{data.headers.length} fields</span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                  <span className="text-sm">Data Points</span>
+                  <span className="font-bold text-purple-500">{(data.rows.length * data.headers.length).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : activeTab === 'export' ? (
+        <ExportOptions data={data} />
       ) : (
         <DataTable data={filteredData} />
       )}

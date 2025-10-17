@@ -15,7 +15,7 @@ export const StatisticsCards = ({ data }: StatisticsCardsProps) => {
   // Detect contact-related data
   const contactKeywords = ['name', 'email', 'phone', 'contact', 'message', 'subject'];
   const isContactData = data.headers.some(h => 
-    contactKeywords.some(k => h.toLowerCase().includes(k))
+    h && contactKeywords.some(k => h.toLowerCase().includes(k))
   );
   
   // Calculate average of first numeric column (but not for contacts)
