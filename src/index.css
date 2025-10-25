@@ -19,6 +19,7 @@ All colors MUST be HSL.
 
     --primary: 263 70% 50%;
     --primary-foreground: 210 40% 98%;
+    --primary-glow: 263 70% 60%;
 
     --secondary: 240 5% 18%;
     --secondary-foreground: 210 40% 98%;
@@ -28,6 +29,7 @@ All colors MUST be HSL.
 
     --accent: 189 95% 52%;
     --accent-foreground: 240 10% 8%;
+    --accent-glow: 189 95% 62%;
 
     --destructive: 0 62.8% 50.6%;
     --destructive-foreground: 210 40% 98%;
@@ -38,13 +40,17 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
     
-    /* Custom design tokens */
+    /* Enhanced design tokens for corporate look */
     --gradient-primary: linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(250 60% 40%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(189 95% 52%) 0%, hsl(200 95% 45%) 100%);
     --gradient-card: linear-gradient(135deg, hsl(240 8% 12% / 0.6) 0%, hsl(240 8% 15% / 0.4) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%) 0%, hsl(142 76% 46%) 100%);
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(48 96% 53%) 100%);
     --shadow-glow: 0 0 40px hsl(263 70% 50% / 0.3);
     --shadow-accent: 0 10px 40px hsl(189 95% 52% / 0.2);
+    --shadow-elevated: 0 20px 60px hsl(240 10% 0% / 0.4);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 240 8% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -104,18 +110,44 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
     background: radial-gradient(ellipse at top, hsl(240 10% 12%) 0%, hsl(240 10% 8%) 100%);
+    background-attachment: fixed;
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold;
+    letter-spacing: -0.02em;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
   }
 }
 
 @layer components {
   .glass-card {
-    @apply backdrop-blur-xl bg-card/60 border border-white/10 shadow-xl;
+    @apply backdrop-blur-xl bg-card/60 border border-white/10 shadow-xl rounded-2xl overflow-hidden;
     background: linear-gradient(135deg, hsl(240 8% 12% / 0.6) 0%, hsl(240 8% 15% / 0.4) 100%);
+    box-shadow: 0 8px 32px 0 hsl(240 10% 0% / 0.37);
   }
   
   .glass-panel {
-    @apply backdrop-blur-lg bg-card/40 border border-white/5;
+    @apply backdrop-blur-lg bg-card/40 border border-white/5 rounded-xl;
   }
   
   .gradient-primary {
@@ -127,11 +159,11 @@ All colors MUST be HSL.
   }
   
   .btn-primary {
-    @apply bg-primary hover:opacity-90 text-primary-foreground px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_hsl(263_70%_50%_/_0.4)] hover:scale-105;
+    @apply bg-primary hover:opacity-90 text-primary-foreground px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_hsl(263_70%_50%_/_0.5)] hover:scale-105 active:scale-95;
   }
   
   .btn-accent {
-    @apply bg-accent hover:opacity-90 text-accent-foreground px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_hsl(189_95%_52%_/_0.4)] hover:scale-105;
+    @apply bg-accent hover:opacity-90 text-accent-foreground px-6 py-2.5 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_hsl(189_95%_52%_/_0.5)] hover:scale-105 active:scale-95;
   }
   
   .animate-fade-in {
@@ -140,6 +172,10 @@ All colors MUST be HSL.
   
   .animate-slide-up {
     animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
   
   @keyframes fadeIn {
@@ -160,5 +196,45 @@ All colors MUST be HSL.
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Enhanced table styling */
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th {
+    @apply font-semibold text-sm;
+  }
+
+  /* Professional card hover effects */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-2xl;
+  }
+
+  /* Gradient text utilities */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .text-gradient-accent {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-accent);
   }
 }

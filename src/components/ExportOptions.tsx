@@ -1,6 +1,8 @@
-import { Download, FileJson, FileSpreadsheet, Printer, Share2 } from 'lucide-react';
+import { Download, FileJson, FileSpreadsheet, Printer, Share2, FileText } from 'lucide-react';
 import { ParsedData } from '@/utils/dataParser';
 import { toast } from 'sonner';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface ExportOptionsProps {
   data: ParsedData;
@@ -64,6 +66,52 @@ export const ExportOptions = ({ data }: ExportOptionsProps) => {
     
     downloadFile(html, `${data.fileName}_export.xls`, 'application/vnd.ms-excel');
     toast.success('Data exported as Excel');
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229);
+    doc.text(`Data Report: ${data.fileName}`, 14, 15);
+    
+    // Add metadata
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 22);
+    doc.text(`Total Records: ${data.rows.length}`, 14, 27);
+    doc.text(`Columns: ${data.headers.length}`, 14, 32);
+    
+    // Add table
+    autoTable(doc, {
+      startY: 38,
+      head: [data.headers],
+      body: data.rows.map(row => data.headers.map(h => String(row[h] || ''))),
+      theme: 'grid',
+      headStyles: {
+        fillColor: [79, 70, 229],
+        textColor: [255, 255, 255],
+        fontSize: 9,
+        fontStyle: 'bold'
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: [50, 50, 50]
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250]
+      },
+      margin: { top: 38, left: 14, right: 14 },
+      styles: {
+        cellPadding: 3,
+        overflow: 'linebreak',
+        cellWidth: 'wrap'
+      }
+    });
+    
+    doc.save(`${data.fileName}_report.pdf`);
+    toast.success('PDF report generated successfully');
   };
 
   const printReport = () => {
@@ -142,26 +190,30 @@ export const ExportOptions = ({ data }: ExportOptionsProps) => {
     { icon: FileSpreadsheet, label: 'CSV', action: exportToCSV, color: 'from-green-500 to-emerald-500' },
     { icon: FileJson, label: 'JSON', action: exportToJSON, color: 'from-yellow-500 to-amber-500' },
     { icon: Download, label: 'Excel', action: exportToExcel, color: 'from-blue-500 to-cyan-500' },
+    { icon: FileText, label: 'PDF', action: exportToPDF, color: 'from-red-500 to-orange-500' },
     { icon: Printer, label: 'Print', action: printReport, color: 'from-purple-500 to-violet-500' },
     { icon: Share2, label: 'Share', action: shareReport, color: 'from-pink-500 to-rose-500' },
   ];
 
   return (
     <div className="glass-card p-6">
-      <h3 className="text-lg font-semibold mb-4">Export & Share</h3>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="mb-6">
+        <h3 className="text-2xl font-bold gradient-primary bg-clip-text text-transparent mb-2">Export & Share</h3>
+        <p className="text-muted-foreground text-sm">Export your data in multiple formats or share your insights</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {options.map((option, index) => {
           const Icon = option.icon;
           return (
             <button
               key={index}
               onClick={option.action}
-              className="p-4 glass-panel rounded-lg hover:scale-105 transition-all flex flex-col items-center gap-2 group"
+              className="p-5 glass-panel rounded-xl hover:scale-105 transition-all flex flex-col items-center gap-3 group hover:shadow-lg"
             >
-              <div className={`p-3 rounded-lg bg-gradient-to-br ${option.color} group-hover:scale-110 transition-transform`}>
-                <Icon className="w-5 h-5 text-white" />
+              <div className={`p-4 rounded-xl bg-gradient-to-br ${option.color} group-hover:scale-110 transition-transform shadow-lg`}>
+                <Icon className="w-6 h-6 text-white" />
               </div>
-              <span className="text-sm font-medium">{option.label}</span>
+              <span className="text-sm font-semibold">{option.label}</span>
             </button>
           );
         })}

@@ -11,7 +11,9 @@ import { DataTransformation } from './DataTransformation';
 import { KPITracker } from './KPITracker';
 import { DataComparison } from './DataComparison';
 import { ReportBuilder } from './ReportBuilder';
-import { BarChart3, Table2, Save, FolderOpen, Filter, Settings2, RefreshCw, Sparkles, Share2, Wrench, Target, GitCompare, FileText } from 'lucide-react';
+import { PivotTable } from './PivotTable';
+import { AdvancedCharts } from './AdvancedCharts';
+import { BarChart3, Table2, Save, FolderOpen, Filter, Settings2, RefreshCw, Sparkles, Share2, Wrench, Target, GitCompare, FileText, Grid3x3, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DashboardProps {
@@ -22,7 +24,7 @@ interface DashboardProps {
 export const Dashboard = ({ data, onReset }: DashboardProps) => {
   const [activeCharts, setActiveCharts] = useState<ChartSuggestion[]>([]);
   const [suggestions, setSuggestions] = useState<ChartSuggestion[]>([]);
-  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview' | 'insights' | 'export' | 'transform' | 'kpi' | 'compare' | 'reports'>('overview');
+  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview' | 'insights' | 'export' | 'transform' | 'kpi' | 'compare' | 'reports' | 'pivot' | 'advanced'>('overview');
   const [filteredData, setFilteredData] = useState<ParsedData>(data);
 
   useEffect(() => {
@@ -86,14 +88,14 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Controls */}
-      <div className="glass-card p-6">
+      <div className="glass-card p-6 animate-fade-in">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+            <h2 className="text-4xl font-bold gradient-primary bg-clip-text text-transparent">
               Analytics Dashboard
             </h2>
-            <p className="text-muted-foreground mt-1">
-              {data.fileName} • {data.rows.length} rows • {data.headers.length} columns
+            <p className="text-muted-foreground mt-2 text-sm">
+              {data.fileName} • {data.rows.length.toLocaleString()} rows • {data.headers.length} columns
             </p>
           </div>
 
@@ -106,11 +108,11 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
             )}
             <button onClick={refreshCharts} className="btn-accent flex items-center gap-2">
               <RefreshCw className="w-4 h-4" />
-              Refresh Charts
+              Refresh
             </button>
             <button onClick={clearAllCharts} className="btn-accent flex items-center gap-2">
               <Filter className="w-4 h-4" />
-              Clear All
+              Clear
             </button>
             <button onClick={saveDashboard} className="btn-primary flex items-center gap-2">
               <Save className="w-4 h-4" />
@@ -124,13 +126,13 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-border">
+        <div className="flex gap-1 border-b border-border overflow-x-auto pb-px">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'overview'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <Settings2 className="w-4 h-4" />
@@ -138,76 +140,87 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
           </button>
           <button
             onClick={() => setActiveTab('charts')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'charts'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
             Visualizations
           </button>
           <button
+            onClick={() => setActiveTab('advanced')}
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
+              activeTab === 'advanced'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            Advanced
+          </button>
+          <button
             onClick={() => setActiveTab('data')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'data'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <Table2 className="w-4 h-4" />
-            Data Table
+            Data
+          </button>
+          <button
+            onClick={() => setActiveTab('pivot')}
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
+              activeTab === 'pivot'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            <Grid3x3 className="w-4 h-4" />
+            Pivot
           </button>
           <button
             onClick={() => setActiveTab('insights')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'insights'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <Sparkles className="w-4 h-4" />
-            AI Insights
+            Insights
           </button>
           <button
-            onClick={() => setActiveTab('export')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
-              activeTab === 'export'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+            onClick={() => setActiveTab('kpi')}
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
+              activeTab === 'kpi'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
-            <Share2 className="w-4 h-4" />
-            Export
+            <Target className="w-4 h-4" />
+            KPIs
           </button>
           <button
             onClick={() => setActiveTab('transform')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'transform'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <Wrench className="w-4 h-4" />
             Transform
           </button>
           <button
-            onClick={() => setActiveTab('kpi')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
-              activeTab === 'kpi'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Target className="w-4 h-4" />
-            KPI Tracker
-          </button>
-          <button
             onClick={() => setActiveTab('compare')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'compare'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <GitCompare className="w-4 h-4" />
@@ -215,14 +228,25 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
           </button>
           <button
             onClick={() => setActiveTab('reports')}
-            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
               activeTab === 'reports'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }`}
           >
             <FileText className="w-4 h-4" />
             Reports
+          </button>
+          <button
+            onClick={() => setActiveTab('export')}
+            className={`px-5 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap font-medium ${
+              activeTab === 'export'
+                ? 'border-primary text-primary bg-primary/10'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            <Share2 className="w-4 h-4" />
+            Export
           </button>
         </div>
       </div>
@@ -418,6 +442,10 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
         <DataComparison data={filteredData} />
       ) : activeTab === 'reports' ? (
         <ReportBuilder data={filteredData} />
+      ) : activeTab === 'pivot' ? (
+        <PivotTable data={filteredData} />
+      ) : activeTab === 'advanced' ? (
+        <AdvancedCharts data={filteredData} />
       ) : (
         <DataTable data={filteredData} />
       )}
