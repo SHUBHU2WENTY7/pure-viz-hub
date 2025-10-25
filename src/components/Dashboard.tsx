@@ -7,7 +7,11 @@ import { StatisticsCards } from './StatisticsCards';
 import { AdvancedFilters } from './AdvancedFilters';
 import { DataInsights } from './DataInsights';
 import { ExportOptions } from './ExportOptions';
-import { BarChart3, Table2, Save, FolderOpen, Filter, Settings2, RefreshCw, Sparkles, Share2 } from 'lucide-react';
+import { DataTransformation } from './DataTransformation';
+import { KPITracker } from './KPITracker';
+import { DataComparison } from './DataComparison';
+import { ReportBuilder } from './ReportBuilder';
+import { BarChart3, Table2, Save, FolderOpen, Filter, Settings2, RefreshCw, Sparkles, Share2, Wrench, Target, GitCompare, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DashboardProps {
@@ -18,7 +22,7 @@ interface DashboardProps {
 export const Dashboard = ({ data, onReset }: DashboardProps) => {
   const [activeCharts, setActiveCharts] = useState<ChartSuggestion[]>([]);
   const [suggestions, setSuggestions] = useState<ChartSuggestion[]>([]);
-  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview' | 'insights' | 'export'>('overview');
+  const [activeTab, setActiveTab] = useState<'charts' | 'data' | 'overview' | 'insights' | 'export' | 'transform' | 'kpi' | 'compare' | 'reports'>('overview');
   const [filteredData, setFilteredData] = useState<ParsedData>(data);
 
   useEffect(() => {
@@ -174,7 +178,51 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
             }`}
           >
             <Share2 className="w-4 h-4" />
-            Export & Share
+            Export
+          </button>
+          <button
+            onClick={() => setActiveTab('transform')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'transform'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            Transform
+          </button>
+          <button
+            onClick={() => setActiveTab('kpi')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'kpi'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Target className="w-4 h-4" />
+            KPI Tracker
+          </button>
+          <button
+            onClick={() => setActiveTab('compare')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'compare'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <GitCompare className="w-4 h-4" />
+            Compare
+          </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-4 py-2 flex items-center gap-2 border-b-2 transition-all ${
+              activeTab === 'reports'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Reports
           </button>
         </div>
       </div>
@@ -362,6 +410,14 @@ export const Dashboard = ({ data, onReset }: DashboardProps) => {
         </div>
       ) : activeTab === 'export' ? (
         <ExportOptions data={data} />
+      ) : activeTab === 'transform' ? (
+        <DataTransformation data={filteredData} onTransform={(newData) => setFilteredData(newData)} />
+      ) : activeTab === 'kpi' ? (
+        <KPITracker data={filteredData} />
+      ) : activeTab === 'compare' ? (
+        <DataComparison data={filteredData} />
+      ) : activeTab === 'reports' ? (
+        <ReportBuilder data={filteredData} />
       ) : (
         <DataTable data={filteredData} />
       )}
